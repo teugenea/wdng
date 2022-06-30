@@ -86,10 +86,10 @@ impl Actor for WsGameSession {
     }
 }
 
-impl Handler<messages::Message> for WsGameSession {
+impl Handler<messages::GameMessage> for WsGameSession {
     type Result = ();
 
-    fn handle(&mut self, msg: messages::Message, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: messages::GameMessage, ctx: &mut Self::Context) -> Self::Result {
         ctx.text(msg.0);
     }
 }

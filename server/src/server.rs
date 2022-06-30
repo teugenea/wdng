@@ -35,10 +35,18 @@ impl Handler<Connect> for GameServer {
     }
 }
 
-impl Handler<Disconnect>  for GameServer {
+impl Handler<Disconnect> for GameServer {
     type Result = ();
 
     fn handle(&mut self, msg: Disconnect, ctx: &mut Self::Context) -> Self::Result {
         println!("Disconnected")
+    }
+}
+
+impl Handler<GameMessage> for GameServer {
+    type Result = ();
+
+    fn handle(&mut self, msg: GameMessage, ctx: &mut Self::Context) -> Self::Result {
+        println!("{}", msg.0);
     }
 }

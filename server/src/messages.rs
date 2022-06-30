@@ -13,7 +13,7 @@ use rand::{self, rngs::ThreadRng, Rng};
 #[derive(Message)]
 #[rtype(result = "usize")]
 pub struct Connect {
-    pub addr: Recipient<Message>
+    pub addr: Recipient<GameMessage>
 }
 
 #[derive(Message)]
@@ -24,4 +24,4 @@ pub struct Disconnect {
 
 #[derive(Message)]
 #[rtype(result = "()")]
-pub struct Message(pub String);
+pub struct GameMessage(pub String);

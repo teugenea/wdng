@@ -79,10 +79,10 @@ impl Actor for GameSession {
     }
 }
 
-impl Handler<messages::Message> for GameSession {
+impl Handler<messages::GameMessage> for GameSession {
     type Result = ();
 
-    fn handle(&mut self, msg: messages::Message, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: messages::GameMessage, ctx: &mut Self::Context) -> Self::Result {
         self.framed.write(ServerResponse::Message(msg.0))
     }
 }

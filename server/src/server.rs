@@ -55,7 +55,8 @@ impl Handler<Disconnect> for GameServer {
     type Result = ();
 
     fn handle(&mut self, msg: Disconnect, ctx: &mut Self::Context) -> Self::Result {
-        println!("Disconnected")
+        println!("Disconnected");
+        self.sessions.remove(&msg.id);
     }
 }
 

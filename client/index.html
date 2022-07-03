@@ -7,7 +7,10 @@
         <script>
             const socket = new WebSocket("ws://127.0.0.1:8080/game/ws");
             socket.onopen = () => {
-                console.log('Connected');
+                console.log('Connected')
+            }
+            socket.onmessage = (msg) => {
+                console.log('Recieved: ' + msg.data)
             }
         </script>
     </body>

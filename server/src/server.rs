@@ -11,13 +11,27 @@ use rand::{self, rngs::ThreadRng, Rng};
 use crate::messages::*;
 
 pub struct GameServer {
+    sessions: HashMap<usize, Recipient<SessionMessage>>,
+    rng: ThreadRng,
+}
 
+impl GameServer {
+    fn get_session_id(&mut self) -> usize {
+        self.rng.gen::<usize>()
+    }
+
+    fn send_message(&self, id: usize, message: &str) {
+        if let Some(session) = self.sessions.get(&id) {
+            session.do_send(SessionMessage(message.to_owned()))
+        }
+    }
 }
 
 impl Default for GameServer {
     fn default() -> Self {
         Self {
-            
+            sessions: HashMap::new(),
+            rng: rand::thread_rng(),
         }
     }
 }
@@ -31,7 +45,9 @@ impl Handler<Connect> for GameServer {
 
     fn handle(&mut self, msg: Connect, ctx: &mut Self::Context) -> Self::Result {
         println!("Connected");
-        0
+        let id = self.get_session_id();
+        self.sessions.insert(id, msg.addr);
+        id
     }
 }
 
@@ -47,6 +63,6 @@ impl Handler<GameMessage> for GameServer {
     type Result = ();
 
     fn handle(&mut self, msg: GameMessage, ctx: &mut Self::Context) -> Self::Result {
-        println!("{}", msg.0);
+        self.send_message(msg.id, &msg.msg)
     }
 }

@@ -4,6 +4,7 @@ use actix_web::{
     middleware::Logger, web, App, Error, HttpRequest, HttpResponse, HttpServer, Responder,
 };
 use actix_web_actors::ws;
+use server::messages::GameMessage;
 use std::time::{Duration, Instant};
 use server::server::GameServer;
 use server::{messages, session};
@@ -86,10 +87,10 @@ impl Actor for WsGameSession {
     }
 }
 
-impl Handler<messages::GameMessage> for WsGameSession {
+impl Handler<messages::SessionMessage> for WsGameSession {
     type Result = ();
 
-    fn handle(&mut self, msg: messages::GameMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: messages::SessionMessage, ctx: &mut Self::Context) -> Self::Result {
         ctx.text(msg.0);
     }
 }
@@ -114,6 +115,10 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsGameSession {
             }
             ws::Message::Text(text) => {
                 println!("{}", text);
+                self.addr.do_send(GameMessage {
+                    id: self.id,
+                    msg: text.trim().to_owned(),
+                })
             }
             ws::Message::Pong(_) => {
                 self.hb = Instant::now();

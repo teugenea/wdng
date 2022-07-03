@@ -11,7 +11,7 @@ use tokio::{
 };
 use tokio_util::codec::FramedRead;
 
-use crate::{codec::*, server::GameServer, messages};
+use crate::{codec::*, server::GameServer, messages::*};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -44,7 +44,7 @@ impl GameSession {
                 // heartbeat timed out
                 println!("Websocket Client heartbeat failed, disconnecting!");
                 // notify chat server
-                act.addr.do_send(messages::Disconnect { id: act.id });
+                act.addr.do_send(Disconnect { id: act.id });
                 // stop actor
                 ctx.stop();
                 // don't try to send a ping
@@ -62,7 +62,7 @@ impl Actor for GameSession {
         self.hb(ctx);
         let addr = ctx.address();
         self.addr
-            .send(messages::Connect { addr: addr.recipient() })
+            .send(Connect { addr: addr.recipient() })
             .into_actor(self)
             .then(|res, act, ctx| {
                 match res {
@@ -79,10 +79,10 @@ impl Actor for GameSession {
     }
 }
 
-impl Handler<messages::GameMessage> for GameSession {
+impl Handler<SessionMessage> for GameSession {
     type Result = ();
 
-    fn handle(&mut self, msg: messages::GameMessage, ctx: &mut Self::Context) -> Self::Result {
+    fn handle(&mut self, msg: SessionMessage, ctx: &mut Self::Context) -> Self::Result {
         self.framed.write(ServerResponse::Message(msg.0))
     }
 }
@@ -91,7 +91,16 @@ impl actix::io::WriteHandler<io::Error> for GameSession {}
 
 impl StreamHandler<Result<ServerRequest, io::Error>> for GameSession {
     fn handle(&mut self, msg: Result<ServerRequest, io::Error>, ctx: &mut Context<Self>) {
-
+        match msg {
+            Ok(ServerRequest::Message(message))  => {
+                self.addr.do_send(GameMessage {
+                    id: self.id,
+                    msg: message,
+                })
+            }
+            Ok(ServerRequest::Ping) => self.hb = Instant::now(),
+            _ => ctx.stop()
+        }
     }
 }
 

@@ -1,4 +1,4 @@
-
+use std::collections::HashMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -13,4 +13,9 @@ pub struct Stat {
     unit_id: usize,
     wrong: usize,
     right: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Unit {
+    meanings: HashMap<String, String>,
 }

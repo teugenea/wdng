@@ -1,5 +1,7 @@
+use std::{future::{Future, self}, pin::Pin};
+
 use crate::model::*;
 
-pub trait UnitRepo {
-    fn get_next(&self) -> Unit;
+pub trait LangUnitRepo {
+    fn get_next(&self);
 }

@@ -114,7 +114,7 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsGameSession {
                 ctx.stop();
             }
             ws::Message::Text(text) => {
-                println!("{}", text);
+                println!("{} - {}", self.id, text);
                 self.addr.do_send(GameMessage {
                     id: self.id,
                     msg: text.trim().to_owned(),

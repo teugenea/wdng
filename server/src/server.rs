@@ -1,20 +1,23 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::HashMap,
     sync::{
-        atomic::{AtomicUsize, Ordering},
-        Arc, Mutex,
+        Arc,
+        Mutex,
     },
 };
 use actix::prelude::*;
+use data::mongo_repo::{MongoLangUnitRepo, MongoConnection};
 use rand::{self, rngs::ThreadRng, Rng};
 
 use crate::messages::*;
 
-type Rec = Arc<Mutex<Recipient<SessionMessage>>>;
+type GameClient = Arc<Mutex<Recipient<SessionMessage>>>;
 
 pub struct GameServer {
-    sessions: HashMap<usize, Rec>,
+    sessions: HashMap<usize, GameClient>,
     rng: ThreadRng,
+    conn: Arc<MongoConnection>,
+    repo: Arc<MongoLangUnitRepo>,
 }
 
 impl GameServer {
@@ -22,26 +25,38 @@ impl GameServer {
         self.rng.gen::<usize>()
     }
 
-    fn send_message(&self, id: usize, message: &str) {
+    fn send_message(&self, id: usize, msg: &str) {
         if let Some(session) = self.sessions.get(&id) {
             let s = Arc::clone(session);
-            let m = String::from(message);
+            let m = String::from(msg);
+            let r = Arc::clone(&self.repo);
             tokio::spawn(async move {
-                GameServer::process_message(s, m).await;
+                GameServer::process_message(r,s, m).await;
             });
         }
     }
 
-    async fn process_message(r: Rec, message: String) {
-        r.lock().unwrap().do_send(SessionMessage(message));
+    async fn process_message(repo: Arc<MongoLangUnitRepo>, client: GameClient, msg: String) {
+        if !msg.starts_with("!") {
+            let l = repo.next().await;
+            match l {
+                Ok(p) => {println!("{:?}", p)},
+                Err(e) => {println!("Error: {}", e)}
+            }
+            client.lock().unwrap().do_send(SessionMessage(msg));
+        }
     }
 }
 
 impl Default for GameServer {
     fn default() -> Self {
+        let conn = Arc::new(MongoConnection::new("localhost", "27017", "wdng", "pass"));
+        let repo = Arc::new(MongoLangUnitRepo::new(Arc::clone(&conn)));
         Self {
             sessions: HashMap::new(),
             rng: rand::thread_rng(),
+            conn,
+            repo
         }
     }
 }

@@ -8,6 +8,7 @@ use server::messages::GameMessage;
 use std::time::{Duration, Instant};
 use server::server::GameServer;
 use server::{messages, session};
+use openssl::ssl::{SslAcceptor, SslFiletype, SslMethod};
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
@@ -30,6 +31,12 @@ async fn ws_route(
 async fn main() -> std::io::Result<()> {
     let server = GameServer::default().start();
     let srv = server.clone();
+
+    let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
+    builder
+        .set_private_key_file("cert/srvs-eu-private.pem", SslFiletype::PEM)
+        .unwrap();
+    builder.set_certificate_chain_file("cert/srvs-eu-cert.pem").unwrap();
     
     HttpServer::new(move || {
         App::new()
@@ -37,7 +44,7 @@ async fn main() -> std::io::Result<()> {
             .service(web::resource("/game/ws").to(ws_route))
             .wrap(Logger::default())
     })
-    .bind(("127.0.0.1", 8080))?
+    .bind_openssl("127.0.0.1:8080", builder)?
     .workers(2)
     .run()
     .await

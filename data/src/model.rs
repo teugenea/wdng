@@ -27,3 +27,9 @@ impl Default for LangUnit {
         }
     }
 }
+
+impl LangUnit {
+    pub fn add_meaning(&mut self, lang: String, m: String) {
+        self.meanings.insert(lang, m);
+    }
+}

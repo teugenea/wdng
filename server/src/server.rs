@@ -8,6 +8,7 @@ use std::{
 use actix::prelude::*;
 use data::mongo_repo::{MongoLangUnitRepo, MongoConnection};
 use rand::{self, rngs::ThreadRng, Rng};
+use config::{Config, File};
 
 use crate::messages::*;
 
@@ -50,7 +51,16 @@ impl GameServer {
 
 impl Default for GameServer {
     fn default() -> Self {
-        let conn = Arc::new(MongoConnection::new("localhost", "27017", "wdng", "pass"));
+        let settings = Config::builder()
+            .add_source(File::with_name("config.yml"))
+            .build()
+            .unwrap();
+        let user = settings.get_string("database.user").unwrap();
+        let password = settings.get_string("database.password").unwrap();
+        let host = settings.get_string("database.host").unwrap();
+        let port = settings.get_string("database.port").unwrap();
+
+        let conn = Arc::new(MongoConnection::new(&host, &port, &user, &password));
         let repo = Arc::new(MongoLangUnitRepo::new(Arc::clone(&conn)));
         Self {
             sessions: HashMap::new(),

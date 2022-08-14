@@ -21,5 +21,6 @@ serde_json = "1.0.82"
 tokio = { version = "1.19.2", features = ["full"] }
 tokio-util = { version = "0.7.3", features = ["codec"] }
 tokio-stream = "0.1.9"
+config = { version = "0.13.2", features = ["yaml"] }
 
 data = { path = "../data" }

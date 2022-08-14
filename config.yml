@@ -1,0 +1,11 @@
+server:
+  port: 8080
+  tls:
+    enabled: true
+    cert-key-file: cert/srvs-eu-private.pem
+    cert-file: cert/srvs-eu-cert.pem
+database:
+  host: localhost
+  port: 27017
+  user: wdng
+  password: pass

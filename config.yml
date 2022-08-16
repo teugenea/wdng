@@ -1,11 +1,19 @@
 server:
+  ws:
+    context: /game/ws
   port: 8080
   tls:
     enabled: true
-    cert-key-file: cert/srvs-eu-private.pem
-    cert-file: cert/srvs-eu-cert.pem
+    cert-key-file: D:/Projects/keys/keys/clns-private.pem
+    cert-file: D:/Projects/keys/keys/clns-cert.pem
 database:
-  host: localhost
+  host: pidgey.home
   port: 27017
   user: wdng
   password: pass
+  dbname: wdng
+  tls:
+    enabled: true
+    srv-public-key: D:/Projects/keys/keys/srvs-public.pem
+    client-cert: D:/Projects/keys/keys/clns-cert.pem
+  

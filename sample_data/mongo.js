@@ -1,9 +1,15 @@
-let host = '127.0.0.1:27017/wdng';
 let user = 'wdng';
 let pass = 'pass';
 
-let db = connect(host);
-db.auth(user, pass);
+if (db.getUser(user) == null) {
+    db.createUser(
+        {
+            user: user,
+            pwd: pass,
+            roles: ["readWrite"]
+        }
+    );
+}
 
 db.lang_units.drop();
 db.lang_units.insertMany([

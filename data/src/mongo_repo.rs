@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use config::Config;
 use futures::{TryStreamExt};
 
 use mongodb::bson::doc;
@@ -9,7 +10,10 @@ use mongodb::{
     bson::Document, 
     Database 
 };
+
 use crate::model::*;
+use common::config_utils::*;
+use common::const_config;
 
 const DB_NAME: &str = "wdng";
 const LANG_UNIT_COLL: &str = "lang_units";
@@ -21,10 +25,35 @@ pub struct MongoConnection {
 
 impl MongoConnection {
 
-    pub fn new(host: &str, port: &str, user: &str, password: &str) -> Self {
-        let conn_str = CONNECTION_PROT.to_owned() 
-            + user + ":" + password + "@" 
-            + host + ":" + port + "/" + DB_NAME;
+    pub fn new(settings: &Config) -> Self {
+        let user = settings.get_string("database.user")
+            .expect("Cannot read database user");
+        let password = settings.get_string( "database.password")
+            .expect("Cannot read database password");
+        let host = resolve_string(settings, "database.host", "localhost");
+        let port = resolve_string(settings, "database.port", "27017");
+        let db_name = resolve_string(settings, "database.dbname", "test");
+        let tls_enabled = resolve_bool(settings, "database.tls.enabled", false);
+
+        let base_conn_str = CONNECTION_PROT.to_owned() 
+            + user.as_str() + ":" + password.as_str()
+            + "@" + host.as_str() + ":" + port.as_str()
+            + "/" + db_name.as_str();
+        let conn_str= match tls_enabled {
+            true => {
+                let srv_pub_key = settings.get_string(const_config::DB_SRV_PUB_KEY)
+                    .expect("error");
+                let client_cert = settings.get_string(const_config::DB_CLIENT_CERT)
+                    .expect("error");
+                base_conn_str + "?tls=true" 
+                    + format!("&authMechanism=SCRAM-SHA-256&tlsCAFile={}&tlsCertificateKeyFile={}&directConnection=true", srv_pub_key, client_cert).as_str()
+            },
+            _ => {
+                base_conn_str
+            }
+        };
+        println!("{}", conn_str);
+
         let client_options = 
             futures::executor::block_on(async move {
                 ClientOptions::parse(conn_str).await

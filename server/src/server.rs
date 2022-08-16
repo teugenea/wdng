@@ -55,12 +55,8 @@ impl Default for GameServer {
             .add_source(File::with_name("config.yml"))
             .build()
             .unwrap();
-        let user = settings.get_string("database.user").unwrap();
-        let password = settings.get_string("database.password").unwrap();
-        let host = settings.get_string("database.host").unwrap();
-        let port = settings.get_string("database.port").unwrap();
 
-        let conn = Arc::new(MongoConnection::new(&host, &port, &user, &password));
+        let conn = Arc::new(MongoConnection::new(&settings));
         let repo = Arc::new(MongoLangUnitRepo::new(Arc::clone(&conn)));
         Self {
             sessions: HashMap::new(),

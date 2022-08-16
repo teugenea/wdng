@@ -1,5 +1,4 @@
 use actix::*;
-use actix_web::dev::Server;
 use actix_web::{
     middleware::Logger, web, App, Error, HttpRequest, HttpServer, Responder,
 };
@@ -14,9 +13,12 @@ use config::{Config, File};
 
 mod cli;
 use common::const_config;
+use common::config_utils::*;
 
 const HEARTBEAT_INTERVAL: Duration = Duration::from_secs(5);
 const CLIENT_TIMEOUT: Duration = Duration::from_secs(10);
+const BIND_ADDR: &str = "127.0.0.1";
+const DEFAULT_BIND_PORT: &str = "8080";
 
 async fn ws_route(
     req:  HttpRequest,
@@ -39,23 +41,20 @@ async fn main() -> std::io::Result<()> {
         .add_source(File::with_name(&args.config))
         .build()
         .unwrap();
-    let tls_enabled = settings.get_bool(const_config::SERVER_TLS_ENABLED);
+    let tls_enabled = resolve_bool(&settings, const_config::SERVER_TLS_ENABLED, false);
     match tls_enabled {
-        Ok(enabled) => {
-            if enabled {
-                run_tls_server(&settings, GameServer::default().start()).await
-            } else {
-                run_server(&settings, GameServer::default().start()).await
-            }
-        },
+        true => run_tls_server(&settings, GameServer::default().start()).await,
         _ => run_server(&settings, GameServer::default().start()).await
     }
 }
 
 async fn run_tls_server(settings: &Config, server: Addr<GameServer>) -> Result<(), std::io::Error> {
-    let port = settings.get_string(const_config::SERVER_PORT).unwrap();
-    let private_cert_file = settings.get_string(const_config::CERT_KEY_FILE).unwrap();
-    let cert_file = settings.get_string(const_config::CERT_FILE).unwrap();
+    let port = resolve_string(settings, const_config::SERVER_PORT, DEFAULT_BIND_PORT);
+    let private_cert_file = settings.get_string(const_config::CERT_KEY_FILE)
+        .expect(format!("TLS is enabled but private key file is not specified [{}]", const_config::CERT_KEY_FILE).as_str());
+    let cert_file = settings.get_string(const_config::CERT_FILE)
+        .expect(format!("TLS is enabled but certificate chain file is not specified [{}]", const_config::CERT_KEY_FILE).as_str());
+    let ws_context = resolve_string(settings, const_config::SERVER_WS_CONTEXT, "/ws");
 
     let mut builder = SslAcceptor::mozilla_intermediate(SslMethod::tls()).unwrap();
     builder
@@ -66,24 +65,26 @@ async fn run_tls_server(settings: &Config, server: Addr<GameServer>) -> Result<(
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(server.clone()))
-            .service(web::resource("/game/ws").to(ws_route))
+            .service(web::resource(ws_context.clone()).to(ws_route))
             .wrap(Logger::default())
     })
-    .bind_openssl("127.0.0.1:".to_owned() + &port, builder)?
+    .bind_openssl(BIND_ADDR.to_owned() + ":" + &port, builder)?
     .workers(2)
     .run()
     .await
 }
 
 async fn run_server(settings: &Config, server: Addr<GameServer>) -> Result<(), std::io::Error> {
-    let port = settings.get_string(const_config::SERVER_PORT).unwrap();
+    let port = resolve_string(settings, const_config::SERVER_PORT, DEFAULT_BIND_PORT);
+    let ws_context = resolve_string(settings, const_config::SERVER_WS_CONTEXT, "/ws");
+
     HttpServer::new(move || {
         App::new()
             .app_data(web::Data::new(server.clone()))
-            .service(web::resource("/game/ws").to(ws_route))
+            .service(web::resource(ws_context.clone()).to(ws_route))
             .wrap(Logger::default())
     })
-    .bind("127.0.0.1:".to_owned() + &port)?
+    .bind(BIND_ADDR.to_owned() + ":" + &port)?
     .workers(2)
     .run()
     .await
@@ -127,7 +128,7 @@ impl Actor for WsGameSession {
             .wait(ctx);
     }
 
-    fn stopping(&mut self, ctx: &mut Self::Context) -> Running {
+    fn stopping(&mut self, _ctx: &mut Self::Context) -> Running {
         self.addr.do_send(messages::Disconnect { id: self.id } );
         Running::Stop
     }

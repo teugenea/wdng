@@ -1,0 +1,1 @@
+&cargo run -- -c D:/Projects/keys/conf/wdng/config.yml

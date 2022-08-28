@@ -1,2 +1,0 @@
-&mongosh "mongodb://admin:admin@pidgey.home:27017/wdng?authSource=admin&tls=true&authMechanism=DEFAULT&tlsCAFile=D%3A/Projects/keys/keys/srvs-public.pem&tlsCertificateKeyFile=D%3A/Projects/keys/keys/clns-cert.pem" mongo.js
-# &mongosh "mongodb://admin:admin@pidgey.home:27017/wdng?authSource=admin" mongo.js

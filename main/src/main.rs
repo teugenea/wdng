@@ -43,8 +43,8 @@ async fn main() -> std::io::Result<()> {
         .unwrap();
     let tls_enabled = resolve_bool(&settings, const_config::SERVER_TLS_ENABLED, false);
     match tls_enabled {
-        true => run_tls_server(&settings, GameServer::default().start()).await,
-        _ => run_server(&settings, GameServer::default().start()).await
+        true => run_tls_server(&settings, GameServer::new(&settings).start()).await,
+        _ => run_server(&settings, GameServer::new(&settings).start()).await
     }
 }
 

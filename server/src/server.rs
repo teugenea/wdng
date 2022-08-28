@@ -37,6 +37,17 @@ impl GameServer {
         }
     }
 
+    pub fn new(settings: &Config) -> Self {
+        let conn = Arc::new(MongoConnection::new(&settings));
+        let repo = Arc::new(MongoLangUnitRepo::new(Arc::clone(&conn)));
+        Self {
+            sessions: HashMap::new(),
+            rng: rand::thread_rng(),
+            conn,
+            repo
+        }
+    }
+
     async fn process_message(repo: Arc<MongoLangUnitRepo>, client: GameClient, msg: String) {
         if !msg.starts_with("!") {
             let l = repo.next().await;
@@ -45,24 +56,6 @@ impl GameServer {
                 Err(e) => {println!("Error: {}", e)}
             }
             client.lock().unwrap().do_send(SessionMessage(msg));
-        }
-    }
-}
-
-impl Default for GameServer {
-    fn default() -> Self {
-        let settings = Config::builder()
-            .add_source(File::with_name("config.yml"))
-            .build()
-            .unwrap();
-
-        let conn = Arc::new(MongoConnection::new(&settings));
-        let repo = Arc::new(MongoLangUnitRepo::new(Arc::clone(&conn)));
-        Self {
-            sessions: HashMap::new(),
-            rng: rand::thread_rng(),
-            conn,
-            repo
         }
     }
 }

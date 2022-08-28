@@ -26,14 +26,14 @@ pub struct MongoConnection {
 impl MongoConnection {
 
     pub fn new(settings: &Config) -> Self {
-        let user = settings.get_string("database.user")
+        let user = settings.get_string(const_config::DB_USER)
             .expect("Cannot read database user");
-        let password = settings.get_string( "database.password")
+        let password = settings.get_string(const_config::DB_PASSWORD)
             .expect("Cannot read database password");
-        let host = resolve_string(settings, "database.host", "localhost");
-        let port = resolve_string(settings, "database.port", "27017");
-        let db_name = resolve_string(settings, "database.dbname", "test");
-        let tls_enabled = resolve_bool(settings, "database.tls.enabled", false);
+        let host = resolve_string(settings, const_config::DB_HOST, "localhost");
+        let port = resolve_string(settings, const_config::DB_PORT, "27017");
+        let db_name = resolve_string(settings, const_config::DB_NANE, "test");
+        let tls_enabled = resolve_bool(settings, const_config::DB_TLS_ENABLED, false);
 
         let base_conn_str = CONNECTION_PROT.to_owned() 
             + user.as_str() + ":" + password.as_str()
@@ -48,11 +48,8 @@ impl MongoConnection {
                 base_conn_str + "?tls=true" 
                     + format!("&authMechanism=SCRAM-SHA-256&tlsCAFile={}&tlsCertificateKeyFile={}&directConnection=true", srv_pub_key, client_cert).as_str()
             },
-            _ => {
-                base_conn_str
-            }
+            _ => base_conn_str
         };
-        println!("{}", conn_str);
 
         let client_options = 
             futures::executor::block_on(async move {

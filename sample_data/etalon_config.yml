@@ -1,0 +1,19 @@
+server:
+  ws:
+    context: /game/ws
+  port: 8080
+  tls:
+    enabled: true
+    cert-key-file: 
+    cert-file: 
+database:
+  host:
+  port: 27017
+  user:
+  password:
+  dbname:
+  tls:
+    enabled: true
+    srv-public-key: 
+    client-cert: 
+  
